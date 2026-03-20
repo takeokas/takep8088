@@ -5,9 +5,9 @@
 - S-RAM 1MBytes  
 --  全メモリ空間  
 -- AS6C4008-55PCN (512KW×8bit)2チップ  
--- ROM 64Bytes  
 
-- SST 27SF512(EEPROM)  
+- ROM 64Bytes  
+-- SST 27SF512(EEPROM)  
 -- 27C512互換であれば使用可能、2764あたりからそのまま差し込めるはず  
 -- 出力ポートのアクセスで、後半512MをROM/RAM切り替え  
 
