@@ -26,7 +26,7 @@
 ## ボード  
 <img src=https://github.com/takeokas/takep8088/blob/main/takep8088-jumper.png width=200>
 
-- ジャンパ J1
+- ジャンパ J1  
 -- 8251(USART)のボーレート・ジェネレータの周波数選択  
   19200/9600/4800 bps  (f/1の場合)  
   
