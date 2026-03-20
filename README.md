@@ -1,8 +1,8 @@
 # takep8088
 8088 Single Board Computer  
 
-<img src=https://github.com/takeokas/takep8088/blob/main/IMG_8818.jpg width=200 >
-<img src=https://github.com/takeokas/takep8088/blob/main/IMG_8819.jpg width=200 >
+<img src=https://github.com/takeokas/takep8088/blob/main/front.jpg width=200 >
+<img src=https://github.com/takeokas/takep8088/blob/main/back.jpg width=200 >
 
 ## Spec  
 - S-RAM 1MBytes  
