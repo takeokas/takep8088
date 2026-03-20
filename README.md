@@ -8,11 +8,12 @@
 - S-RAM 1MBytes  
 --  全メモリ空間  
 -- AS6C4008-55PCN (512KW×8bit)2チップ  
+-- リセット直後は、メモリ空間の後半 512K は、ROM  
+-- 出力ポートのアクセスで、後半512KをROM/RAM切り替え  
 
 - ROM 64Bytes  
 -- SST 27SF512(EEPROM)  
 -- 27C512互換であれば使用可能、2764あたりからそのまま差し込めるはず  
--- 出力ポートのアクセスで、後半512MをROM/RAM切り替え  
 
 - Crystal 14.7456MHz  
 -- 8251(USART) の baud rate generation に、いい感じの周波数  
