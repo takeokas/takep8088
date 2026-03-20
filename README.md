@@ -38,9 +38,9 @@
   18.75Hz / 9.375Hz
 
 - ワイヤリング  
-<img src=https://github.com/takeokas/takep8088/blob/main/takep-wiring.png  width=200>
+<img src=https://github.com/takeokas/takep8088/blob/main/takep-wiring.png  width=400>
 
--- 8251 TX Emppy割込みを使用する場合は、7405 の空き入力端子に、8251-TXE を接続する  
+-- 8251 TX Empty割込みを使用する場合は、7405 の空き入力端子に、8251-TXE を接続する  
 -- 7405 の空き入力ピンは、(手配線などで) 必ず GND へ、接続する。さもないと、Interrupt Enableした途端に、割込みが発生する。  
 -- U20 74139が、74HC139 のときは、空き入力ピンを、DT-R、SS0 に接続すること。74LS139など TTL のときは、open のママでも支障ない。  
 
