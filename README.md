@@ -26,9 +26,6 @@
 -- CPU は、約 4.9MHz で動作  
 -- 周辺IOのクロックは、約2.45MHz  
 
-※ワイヤがあるのは、設計どおり  
--- 引き回しを諦めた…orz  
-
 ## ボード  
 <img src=https://github.com/takeokas/takep8088/blob/main/takep8088-jumper.png width=200>
 
@@ -39,6 +36,10 @@
 - ジャンパ JP1  
 -- フリーランニング・タイマの周期選択  
   18.75Hz / 9.375Hz
+
+※ワイヤがあるのは、設計どおり  
+-- 引き回しを諦めた…orz  
+
 
 
 ## 回路
@@ -94,4 +95,8 @@
 -- D0: U18[2pin]=NC, D1:U18[4pin]=NC;  
 -- D2: U18[6pin]=NC, D5:U18[10pin]=NC;   
 ※D3,D4 は飛ばしている(配線の困難性から)
+
+## その他  
+- HOLD を、Vcc に、手動で接続してみると、CPU の実行が停止し、HLDA LEDが点灯する  
+- HOLD を使用する機器は、HOLD 端子に接続するとよい(PCB では、Pull Downしているのみ)  
 
