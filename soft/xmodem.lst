@@ -1,0 +1,218 @@
+     1                                  ;--------------------------------------
+     2                                  ; XMODEM Receive loader (Checksum)
+     3                                  ;受信開始時に NAK を送信
+     4                                  ;SOH を受信 → 128バイト受信
+     5                                  ;チェックサム確認
+     6                                  ;OK → ACK / NG → NAK
+     7                                  ;EOT を受信したら ACK を返して終了
+     8                                  ;受信データは 000400h に格納
+     9                                  ;--------------------------------------
+    10                                  ; takep8088
+    11                                  USARTD	equ	00h	;8251 data register
+    12                                  USARTC	equ	01h	;8251 control register
+    13                                  ;
+    14                                  stack_seg	equ 02000h
+    15                                  stack		equ 00000h ; 0FFFFから前へ
+    16                                  ;
+    17                                  	;; Xmodem constants
+    18                                  SOH equ 01h
+    19                                  EOT equ 04h
+    20                                  ACK equ 06h
+    21                                  NAK equ 15h
+    22                                  CAN equ 18h
+    23                                  ;
+    24                                  ;
+    25                                  ;;;  loaded bin top= 00400h, 
+    26                                  recv_objseg equ 040h	;recv obj from 00400h
+    27                                  recv_objoff equ 000h
+    28                                  ;
+    29                                  block_no equ 0fff0h		;0400h+fff0h
+    30                                  ;
+    31                                  ;;; 
+    32                                  ;;; 0FFF00h
+    33                                  	section .text
+    34                                  	;org 0ff00h
+    35                                  start_off equ 0ff00h
+    36 00000000 FF<rep FF00h>           	TIMES start_off-($-$$) DB 0FFh
+    37                                  ;;; 
+    38                                  start:	
+    39                                  	;;; stack<= 02000h 
+    40 0000FF00 B80020                  	mov ax,stack_seg
+    41 0000FF03 8ED0                    	mov ss,ax
+    42 0000FF05 BC0000                  	mov sp,stack
+    43                                  	;
+    44                                  	;mov ax,data_seg
+    45                                  	;mov ds,ax
+    46                                  	;mov es,ax
+    47                                  	;
+    48                                  	;
+    49                                  ;	8251 setup
+    50 0000FF08 BA0100                  	mov	dx,USARTC
+    51 0000FF0B B000                    	mov	al,00h	;Default mode or no operation
+    52 0000FF0D EE                      	out	dx,al	;Try command
+    53 0000FF0E EE                      	out	dx,al	;Try command
+    54 0000FF0F EE                      	out	dx,al	;Try command
+    55 0000FF10 B040                    	mov	al,40h	;reset
+    56 0000FF12 EE                      	out	dx,al	;Out it
+    57 0000FF13 B91000                  	mov	CX,16	;Delay
+    58 0000FF16 E2FE                    	loop	$	;Delay
+    59 0000FF18 B04E                    	mov	al,4eh	;mode
+    60 0000FF1A EE                      	out	dx,al	;Out it
+    61 0000FF1B B037                    	mov	al,37h	;command
+    62 0000FF1D EE                      	out	dx,al	;Out it
+    63                                  	;; end of 8251 setup
+    64 0000FF1E B02A                    	mov al,"*"
+    65 0000FF20 E87500                  	call putc
+    66                                  ;
+    67                                  xmodem_start:
+    68 0000FF23 B84000                      mov ax,recv_objseg
+    69 0000FF26 8ED8                        mov ds,ax
+    70 0000FF28 8EC0                        mov es,ax
+    71                                      ;
+    72                                      ;mov al,1
+    73                                      ;mov [block_no], al
+    74 0000FF2A C606F0FF01                  mov byte [block_no], 1
+    75                                  	;; 
+    76 0000FF2F E86200                      call send_nak    ; 最初の NAK
+    77 0000FF32 BF0000                      mov di,recv_objoff
+    78                                  	;; 
+    79                                  main_loop:
+    80 0000FF35 E86B00                      call getc
+    81 0000FF38 3C01                        cmp al, SOH
+    82 0000FF3A 7406                        je recv_block
+    83 0000FF3C 3C04                        cmp al, EOT
+    84 0000FF3E 743A                        je recv_eot
+    85 0000FF40 EBF3                        jmp main_loop
+    86                                  
+    87                                  ;--------------------------
+    88                                  ; 128バイトブロック受信
+    89                                  ;--------------------------
+    90                                  recv_block:
+    91 0000FF42 E85E00                      call getc         ; block number
+    92 0000FF45 88C3                        mov bl, al
+    93                                      ;
+    94 0000FF47 E85900                      call getc         ; inverted block number
+    95 0000FF4A F6D0                        not al
+    96 0000FF4C 38D8                        cmp al, bl
+    97 0000FF4E 7525                        jne block_error
+    98                                      ;
+    99 0000FF50 3A1EF0FF                    cmp bl, [block_no]
+   100 0000FF54 751F                        jne block_error
+   101                                      ; データ受信
+   102 0000FF56 B98000                      mov cx, 128
+   103 0000FF59 30F6                        xor dh, dh             ; checksum=0
+   104                                      ;
+   105                                  recv_data:
+   106 0000FF5B E84500                      call getc
+   107 0000FF5E 8805                        mov [di], al
+   108 0000FF60 00C6                        add dh, al ; checksum +=al
+   109 0000FF62 47                          inc di
+   110 0000FF63 E2F6                        loop recv_data
+   111                                      ;
+   112 0000FF65 E83B00                      call getc	;recv checksum
+   113 0000FF68 38F0                        cmp al, dh    ; check チェックサム    
+   114 0000FF6A 7509                        jne block_error
+   115                                      ; OK
+   116 0000FF6C E82100                      call send_ack
+   117 0000FF6F FE06F0FF                    inc byte [block_no]
+   118 0000FF73 EBC0                        jmp main_loop
+   119                                  	;;
+   120                                  block_error:
+   121 0000FF75 E81C00                      call send_nak
+   122 0000FF78 EBBB                        jmp main_loop
+   123                                  
+   124                                  ;--------------------------
+   125                                  ; EOT処理 & jump to loaded Obj
+   126                                  ;--------------------------
+   127                                  recv_eot:
+   128 0000FF7A E81300                  	call send_ack
+   129                                  	;; display hex dump
+   130 0000FF7D BF0004                  	mov di,0400h		; 00400 番地から
+   131 0000FF80 B96400                  	mov cx,100
+   132                                  ld01:	
+   133 0000FF83 8A05                    	MOV  al,[DI]
+   134 0000FF85 E82C00                  	call hex
+   135 0000FF88 47                      	INC  DI
+   136 0000FF89 E2F8                    	LOOP  ld01
+   137                                  	;; jump to loaded obj
+   138 0000FF8B EA00004000              	jmp  040h:0h ;db 0eah ;jmp far, offset, segment; start=400h{cs=40h,pc=00h}
+   139                                  	;; 
+   140                                  ;;; 
+   141                                  send_ack:
+   142 0000FF90 B006                        mov al, ACK
+   143 0000FF92 EB04                        jmp putc
+   144                                  
+   145                                  send_nak:
+   146 0000FF94 B015                        mov al, NAK
+   147 0000FF96 EB00                        jmp putc
+   148                                  
+   149                                  ;--------------------------
+   150                                  ; Serial I/O
+   151                                  ;--------------------------
+   152                                  send_char:
+   153 0000FF98 50                      putc:	push ax
+   154 0000FF99 E401                    putc1:	in	al,USARTC	;Get status
+   155 0000FF9B 2401                    	and	al,01h		;check TxBUF empty
+   156 0000FF9D 74FA                    	jz	putc1		;wait for empty
+   157 0000FF9F 58                      	pop	ax		;Restore char
+   158 0000FFA0 E600                    	out	USARTD,al	;Out it
+   159 0000FFA2 C3                      	ret
+   160                                  	;; end of putc
+   161                                  
+   162                                  recv_char:
+   163                                  getc:	
+   164                                  getc1:
+   165                                  	;;; himatubusi SW->LED
+   166 0000FFA3 E404                    	in al,04h		;read SW1
+   167 0000FFA5 00C0                    	add al,al
+   168 0000FFA7 00C0                    	add al,al
+   169 0000FFA9 E60C                    	out 0Ch,al		;out LED
+   170                                  	;;; 
+   171 0000FFAB E401                    	in	al,USARTC	;Get status
+   172 0000FFAD 2402                    	and	al,02h		;check RxBUF full
+   173 0000FFAF 74F2                    	jz	getc1		;wait for empty
+   174 0000FFB1 E400                    	in	al,USARTD	;Get Char
+   175 0000FFB3 C3                      	ret
+   176                                  	;; end of getc
+   177                                  ;;; 
+   178                                  hex:
+   179 0000FFB4 50                      	push ax
+   180                                  	;shr al,4
+   181 0000FFB5 D0E8                    	shr al,1
+   182 0000FFB7 D0E8                    	shr al,1
+   183 0000FFB9 D0E8                    	shr al,1
+   184 0000FFBB D0E8                    	shr al,1
+   185 0000FFBD E80100                  	call hexlo
+   186 0000FFC0 58                      	pop ax
+   187                                  hexlo:
+   188 0000FFC1 240F                    	and al,0Fh
+   189 0000FFC3 0490                    	add al, 90h
+   190 0000FFC5 27                      	daa
+   191 0000FFC6 1440                    	adc al, 40h
+   192 0000FFC8 27                      	daa
+   193                                  	;jmp putc
+   194 0000FFC9 E8CCFF                  	call putc
+   195 0000FFCC C3                      	ret
+   196                                  ;;; 
+   197                                  
+   198                                  ;;;
+   199                                  ;;;
+   200                                  ;;;
+   201                                  	; Reset  at FFFF0h
+   202                                  	;section .text
+   203                                          ;org     0fff0h		;offset
+   204                                  reset_off equ 0fff0h
+   205 0000FFCD FF<rep 23h>             	TIMES reset_off-($-$$) DB 0FFh
+   206                                  	;
+   207 0000FFF0 EA                              db      0eah    ;jmp far
+   208 0000FFF1 [00FF]                          dw      start   ;offset
+   209 0000FFF3 00F0                            dw      0F000h   ;segment
+   210                                                          ;
+   211                                  
+   212                                  ;--------------------------
+   213                                  ; Data Area
+   214                                  ;--------------------------
+   215                                  ;block_no:	db 1
+   216                                  ;buffer:	db 128 dup (0)
+   217                                  
+   218                                  ;end
