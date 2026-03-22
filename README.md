@@ -106,5 +106,8 @@
 
 ## その他  
 - HOLD を、Vcc に、手動で接続してみると、CPU の実行が停止し、HLDA LEDが点灯する  
-- HOLD を使用する機器は、HOLD 端子に接続するとよい(PCB では、Pull Downしているのみ)  
+- HOLD を使用する機器は、HOLD 端子に接続するとよい(PCB では、Pull Downしているのみ)
+- 2026/MAR/20 「Kernel/VM探検隊＠つくば No3」での、発表資料  
+--  https://www.slideshare.net/slideshow/tht-8088-single-board-computer-with-amd-8088-bought-at-junk-shop-in-1989/286593537?utm_source=clipboard_share_button&utm_campaign=slideshare_make_sharing_viral_v2&utm_variation=control&utm_medium=share
+-   
 
